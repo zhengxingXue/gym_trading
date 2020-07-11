@@ -1,10 +1,15 @@
 # modified from https://github.com/notadamking/Stock-Trading-Environment/blob/master/env/StockTradingEnv.py
 import copy
+import os
 import gym
 import random
 from gym import spaces
+from gym_trading.config import PACKAGE_DIR
 import pandas as pd
 import numpy as np
+
+# get rid of gym UserWarning: Box bound precision lowered...
+gym.logger.set_level(40)
 
 
 class StockTradingEnv(gym.Env):
@@ -24,20 +29,29 @@ class StockTradingEnv(gym.Env):
     INITIAL_ACCOUNT_BALANCE = 10000
     TIME_STEP = 300
 
-    def __init__(self, df):
+    def __init__(self, df=None, file='data/AAPL.csv', absolute_path=False):
         super(StockTradingEnv, self).__init__()
 
-        self.df = df
+        if df is None:
+            if absolute_path:
+                file_path = file
+            else:
+                file_path = os.path.join(PACKAGE_DIR, file)
+            self.df = pd.read_csv(file_path)
+            self.df = self.df.sort_values('Date')
+        else:
+            self.df = df
+
         self.normalized_df = self._normalize_df()
         self.reward_range = (0, self.MAX_ACCOUNT_BALANCE - self.INITIAL_ACCOUNT_BALANCE)
 
         # Actions of the format Buy x%, Sell x%, Hold, etc.
         self.action_space = spaces.Box(
-            low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16)
+            low=np.array([0, 0], dtype=np.float32), high=np.array([3, 1], dtype=np.float32), dtype=np.float32)
 
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(6, 6), dtype=np.float16)
+            low=0, high=1, shape=(6, 6), dtype=np.float32)
 
         self.reset()
 
