@@ -4,7 +4,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import PPO2
 
 import gym
-from gym_trading.envs.stock_env_v0 import StockTradingEnv
+from gym_trading.envs.stock_env_v0 import StockTradingEnvV0
 from gym_trading.config import PACKAGE_DIR
 import pandas as pd
 
@@ -23,7 +23,7 @@ def main():
     df = df.sort_values('Date')
 
     # The algorithms require a vectorized environment to run
-    env = DummyVecEnv([lambda: StockTradingEnv(df)])
+    env = DummyVecEnv([lambda: StockTradingEnvV0(df)])
 
     model = PPO2(MlpPolicy, env, verbose=1)
 

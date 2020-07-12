@@ -5,6 +5,7 @@ import gym
 import random
 from gym import spaces
 from gym_trading.config import PACKAGE_DIR
+from gym_trading.envs.helper import normalize_df
 import pandas as pd
 import numpy as np
 
@@ -12,7 +13,7 @@ import numpy as np
 gym.logger.set_level(40)
 
 
-class StockTradingEnv(gym.Env):
+class StockTradingEnvV0(gym.Env):
     """
     Stock trading environment.
 
@@ -30,7 +31,7 @@ class StockTradingEnv(gym.Env):
     TIME_STEP = 300
 
     def __init__(self, df=None, file='data/AAPL.csv', absolute_path=False):
-        super(StockTradingEnv, self).__init__()
+        super(StockTradingEnvV0, self).__init__()
 
         if df is None:
             if absolute_path:
@@ -38,11 +39,12 @@ class StockTradingEnv(gym.Env):
             else:
                 file_path = os.path.join(PACKAGE_DIR, file)
             self.df = pd.read_csv(file_path)
-            self.df = self.df.sort_values('Date')
+            self.df.columns = self.df.columns.str.lower()
+            self.df = self.df.sort_values('date')
         else:
             self.df = df
 
-        self.normalized_df = self._normalize_df()
+        self.normalized_df = normalize_df(self.df)
         self.reward_range = (0, self.MAX_ACCOUNT_BALANCE - self.INITIAL_ACCOUNT_BALANCE)
 
         # Actions of the format Buy x%, Sell x%, Hold, etc.
@@ -105,11 +107,11 @@ class StockTradingEnv(gym.Env):
         index_start = self.current_step + self.start_point - 6
         index_end = self.current_step + self.start_point - 1
         frame = np.array([
-            self.normalized_df.loc[index_start: index_end, 'Open'].values,
-            self.normalized_df.loc[index_start: index_end, 'High'].values,
-            self.normalized_df.loc[index_start: index_end, 'Low'].values,
-            self.normalized_df.loc[index_start: index_end, 'Close'].values,
-            self.normalized_df.loc[index_start: index_end, 'Volume'].values,
+            self.normalized_df.loc[index_start: index_end, 'open'].values,
+            self.normalized_df.loc[index_start: index_end, 'high'].values,
+            self.normalized_df.loc[index_start: index_end, 'low'].values,
+            self.normalized_df.loc[index_start: index_end, 'close'].values,
+            self.normalized_df.loc[index_start: index_end, 'volume'].values,
         ])
 
         # Append additional data and scale each value to between 0-1
@@ -127,7 +129,7 @@ class StockTradingEnv(gym.Env):
     def _take_action(self, action):
         # Set the current price to avg of High and Low
         current_point = self.current_step + self.start_point
-        current_price = (self.df.loc[current_point, "High"] + self.df.loc[current_point, "Low"]) / 2
+        current_price = (self.df.loc[current_point, "high"] + self.df.loc[current_point, "low"]) / 2
 
         action_type = action[0]
         amount = action[1]
@@ -158,9 +160,3 @@ class StockTradingEnv(gym.Env):
 
         if self.shares_held == 0:
             self.cost_basis = 0
-
-    def _normalize_df(self):
-        new_df = copy.copy(self.df)
-        new_df.pop('Date')
-        normalized_df = (new_df - new_df.min()) / (new_df.max() - new_df.min())
-        return normalized_df

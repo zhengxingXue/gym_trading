@@ -3,7 +3,7 @@ import pytest
 import pandas as pd
 import gym
 from gym_trading.config import PACKAGE_DIR
-from gym_trading.envs.stock_env_v0 import StockTradingEnv
+from gym_trading.envs.stock_env_v0 import StockTradingEnvV0
 
 
 @pytest.fixture
@@ -11,8 +11,9 @@ def stock_trading_env():
     file = 'data/AAPL.csv'
     file_path = os.path.join(PACKAGE_DIR, file)
     df = pd.read_csv(file_path)
-    df = df.sort_values('Date')
-    return StockTradingEnv(df)
+    df.columns = df.columns.str.lower()
+    df = df.sort_values('date')
+    return StockTradingEnvV0(df)
 
 
 @pytest.fixture
