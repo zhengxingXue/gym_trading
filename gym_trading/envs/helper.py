@@ -6,6 +6,10 @@ import numpy as np
 from pathlib import Path
 from functools import reduce
 
+action_to_str = {0: 'buy',
+                 1: 'sell',
+                 2: 'hold'}
+
 
 def normalize_df(df):
     """
