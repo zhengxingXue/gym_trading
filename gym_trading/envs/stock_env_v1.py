@@ -7,6 +7,7 @@ from gym_trading.envs.helper import normalize_df, construct_df_array
 
 class ActionInvalid(Exception):
     """Exception raised for invalid action"""
+
     def __init__(self, action, message="action must be 0 or 1 or 2"):
         self.action = action
         self.message = "action : " + str(action) + " is not valid \n" + message
@@ -26,7 +27,7 @@ class StockTradingEnvV1(gym.Env):
     STACK = 10  # number of shares to operate with
     INITIAL_BALANCE = 10000.  # initial balance
     MAX_BALANCE = INITIAL_BALANCE * 3  # used for normalization
-    TOTAL_STEP = 300    # total number of timestep of the simulation
+    TOTAL_STEP = 300  # total number of timestep of the simulation
 
     def __init__(self, df=None, file_array=None, absolute_path=False, debug=False):
         super(StockTradingEnvV1, self).__init__()
@@ -100,20 +101,30 @@ class StockTradingEnvV1(gym.Env):
         ax_balance = plt.subplot(self.stock_number + 1, 1, 1)
         ax_balance.set_xlim(lower, upper)
         plt.axvline(x=self.current_step, label='current step', c='0.75')
+
         plt.plot(self.balance_history, label='balance')
         plt.plot(self.net_worth_history, label='net worth')
         plt.legend()
         # ax_balance.set_ylim(bottom=0)
 
         for i, stock_name in zip(range(self.stock_number), self.stock_name_array):
-            ax = plt.subplot(self.stock_number+1, 1, i+2)
-            ax.set_xlim(lower, upper)
-            plt.axvline(x=self.current_step, label='current step', c='0.75')
+            ax = plt.subplot(self.stock_number + 1, 1, i + 2)
+            plt.axvline(x=self.current_step, label='current step', c='0.6')
+            ax.axvspan(self.current_step - self.observation_frame, self.current_step,
+                       color='0.8', label='observation frame')
+
             open_label = stock_name + '_' + 'open'
             close_label = stock_name + '_' + 'close'
-            x = range(lower+padding, self.current_step+1)
+            x = range(lower + padding, self.current_step + 1)
             index_start = self.start_point - self.observation_frame
             index_end = self.start_point + self.current_step
+            data = self.df[[open_label, close_label]].loc[index_start: self.start_point + self.TOTAL_STEP].values
+            top = np.max(np.max(data)) + padding
+            bottom = np.min(np.min(data)) - padding
+
+            ax.set_ylim(bottom, top)
+            ax.set_xlim(lower, upper)
+
             line_open, = plt.plot(x, self.df[open_label].loc[index_start: index_end].values, label=open_label)
             line_close, = plt.plot(x, self.df[close_label].loc[index_start: index_end].values, label=close_label)
             plt.legend(handles=[line_open, line_close])
@@ -155,7 +166,7 @@ class StockTradingEnvV1(gym.Env):
                     info[stock_name]['price'] = share_value
 
                     self.balance -= self.STACK * share_value
-                    self.net_worth = self.net_worth     # net worth unchanged
+                    self.net_worth = self.net_worth  # net worth unchanged
                     # TODO: add commission
                     self.cost_basis_array[i] = share_value
                     self.hold_share_array[i] = 1  # hold share
