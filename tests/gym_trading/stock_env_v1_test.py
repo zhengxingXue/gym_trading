@@ -184,7 +184,10 @@ def test_step_loop(stock_trading_env_two_stock):
 
 def test_print(stock_trading_env_two_stock):
     env = stock_trading_env_two_stock
+    for _ in range(200):
+        env.step(env.action_space.sample())
     env.render()
+
     # print(env.reset())
     # print(env.normalized_df.head())
     # print(env.observation_space.shape)

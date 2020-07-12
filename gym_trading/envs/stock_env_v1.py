@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+import matplotlib.pyplot as plt
 from gym import spaces
 from gym_trading.envs.helper import normalize_df, construct_df_array
 
@@ -16,7 +17,10 @@ class StockTradingEnvV1(gym.Env):
     """
     Stock trading environment for Reinforcement learning.
     """
-    metadata = {'render.modes': ['human']}
+    metadata = {
+        'render.modes': ['human', 'rgb_array'],
+        'video.frames_per_second': 10
+    }
 
     observation_frame = 3  # number of frames feed to observation
     STACK = 10  # number of shares to operate with
@@ -48,7 +52,9 @@ class StockTradingEnvV1(gym.Env):
                        dtype=np.float32)
 
         self.net_worth = self.INITIAL_BALANCE
+        self.net_worth_history = [self.net_worth]
         self.balance = self.INITIAL_BALANCE
+        self.balance_history = [self.balance]
 
         # whether hold share of the stock
         # [0] - No ; [1] - Yes
@@ -62,7 +68,9 @@ class StockTradingEnvV1(gym.Env):
 
     def reset(self):
         self.net_worth = self.INITIAL_BALANCE
+        self.net_worth_history = [self.net_worth]
         self.balance = self.INITIAL_BALANCE
+        self.balance_history = [self.balance]
         self.hold_share_array = [0] * self.stock_number
         self.cost_basis_array = np.array([0] * self.stock_number)
         self.start_point = 10 if self.debug else 10  # index of start point
@@ -73,6 +81,10 @@ class StockTradingEnvV1(gym.Env):
         net_worth_before_step = self.net_worth
         # Execute one time step within the environment
         info = self._take_action(action)
+
+        self.balance_history.append(self.balance)
+        self.net_worth_history.append(self.net_worth)
+
         self.current_step += 1
         reward = self.net_worth - net_worth_before_step
         done = self.net_worth <= 0 or self.current_step >= self.TOTAL_STEP
@@ -80,12 +92,37 @@ class StockTradingEnvV1(gym.Env):
         return obs, reward, done, info
 
     def render(self, mode='human'):
+        fig = plt.figure(figsize=(9, 9))
+        padding = 10
+        lower = - self.observation_frame - padding
+        upper = self.TOTAL_STEP + 1 + padding
+
+        ax_balance = plt.subplot(self.stock_number + 1, 1, 1)
+        ax_balance.set_xlim(lower, upper)
+        plt.axvline(x=self.current_step, label='current step', c='0.75')
+        plt.plot(self.balance_history, label='balance')
+        plt.plot(self.net_worth_history, label='net worth')
+        plt.legend()
+        # ax_balance.set_ylim(bottom=0)
+
+        for i, stock_name in zip(range(self.stock_number), self.stock_name_array):
+            ax = plt.subplot(self.stock_number+1, 1, i+2)
+            ax.set_xlim(lower, upper)
+            plt.axvline(x=self.current_step, label='current step', c='0.75')
+            open_label = stock_name + '_' + 'open'
+            close_label = stock_name + '_' + 'close'
+            x = range(lower+padding, self.current_step+1)
+            index_start = self.start_point - self.observation_frame
+            index_end = self.start_point + self.current_step
+            line_open, = plt.plot(x, self.df[open_label].loc[index_start: index_end].values, label=open_label)
+            line_close, = plt.plot(x, self.df[close_label].loc[index_start: index_end].values, label=close_label)
+            plt.legend(handles=[line_open, line_close])
+            plt.legend()
         if mode == 'human':
-            profit = self.net_worth - self.INITIAL_BALANCE
-            print(f'Step: {self.current_step}')
-            print(f'Balance: {self.balance}')
-            print(f'Net worth: {self.net_worth}')
-            print(f'Profit: {profit}')
+            plt.show()
+        elif mode == 'rgb_array':
+            # TODO: convert plt to rgb array
+            pass
         else:
             pass
 
