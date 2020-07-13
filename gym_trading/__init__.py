@@ -12,3 +12,9 @@ register(
     entry_point='gym_trading.envs:StockTradingEnvV1',
     kwargs={},
 )
+
+register(
+    id='StockTrading-IBM-MSFT-v1',
+    entry_point='gym_trading.envs:StockTradingEnvV1',
+    kwargs={'file_array':['data/daily_IBM.csv', 'data/daily_MSFT.csv']},
+)

@@ -29,6 +29,11 @@ def stock_trading_v1():
     return gym.make('StockTrading-v1')
 
 
+@pytest.fixture
+def stock_trading_v1_make():
+    return gym.make('StockTrading-IBM-MSFT-v1')
+
+
 @pytest.mark.parametrize("file_array, stock_number, action_space", [
     (['data/daily_IBM.csv'], 1, [3]),
     (['data/daily_IBM.csv', 'data/daily_MSFT.csv'], 2, [3, 3]),
@@ -43,9 +48,13 @@ def test_env_init(file_array, stock_number, action_space):
     assert env.column_number == 5 * stock_number
 
 
-def test_env_make(stock_trading_env_one_stock, stock_trading_v1):
+def test_env_make(stock_trading_env_one_stock, stock_trading_v1, stock_trading_v1_make, stock_trading_env_two_stock):
     assert stock_trading_v1.action_space == stock_trading_env_one_stock.action_space
     assert stock_trading_env_one_stock.stock_number == stock_trading_v1.stock_number
+    env = stock_trading_v1_make
+    assert env.action_space == stock_trading_env_two_stock.action_space
+    assert env.observation_space == stock_trading_env_two_stock.observation_space
+    assert env.stock_number == stock_trading_env_two_stock.stock_number
 
 
 def test_env_two_stock(stock_trading_env_two_stock):
@@ -78,8 +87,8 @@ def test_start_point(stock_trading_env_two_stock):
     env = stock_trading_env_two_stock
     obs = env.reset()
     stacked_obs_part = np.reshape(obs[:env.column_number*env.observation_frame], (-1, 10))
-    index_end = env.current_step + env.start_point - 1
-    index_start = env.current_step + env.start_point - env.observation_frame
+    index_end = env.current_step + env.start_point
+    index_start = env.current_step + env.start_point - env.observation_frame + 1
     ref_obs_norm = env.normalized_df.loc[index_start:index_end].values
     assert ((ref_obs_norm == stacked_obs_part).all()).all()
 

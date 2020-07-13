@@ -115,7 +115,7 @@ class StockTradingEnvV1(gym.Env):
         for i, stock_name in zip(range(self.stock_number), self.stock_name_array):
             ax = plt.subplot(self.stock_number + 1, 1, i + 2)
             plt.axvline(x=self.current_step, label='current step', c='0.7')
-            ax.axvspan(self.current_step - self.observation_frame, self.current_step,
+            ax.axvspan(self.current_step - self.observation_frame + 1, self.current_step,
                        color='0.9', label='observation frame')
             open_label = stock_name + '_' + 'open'
             close_label = stock_name + '_' + 'close'
@@ -165,9 +165,7 @@ class StockTradingEnvV1(gym.Env):
             info['balance_before_step'] = self.balance
             info['net_worth_before_step'] = self.net_worth
         for i, action, stock_name in zip(range(self.stock_number), action, self.stock_name_array):
-
             info[stock_name] = {}
-
             if action == 0:  # buy
                 info[stock_name]['action'] = 'buy'
                 # whether hold share of the stock [0] - No ; [1] - Yes
@@ -239,8 +237,8 @@ class StockTradingEnvV1(gym.Env):
 
     def _get_obs(self):
         obs = np.array([])
-        index_start = self.current_step + self.start_point - self.observation_frame
-        index_end = self.current_step + self.start_point - 1
+        index_start = self.current_step + self.start_point - self.observation_frame + 1
+        index_end = self.current_step + self.start_point
         obs = np.append(obs, self.normalized_df.loc[index_start:index_end].values.flatten())  # as date pop
         obs = np.append(obs, self.hold_share_array)
         obs = np.append(obs, self.cost_basis_array / self.max_share_value_array)
