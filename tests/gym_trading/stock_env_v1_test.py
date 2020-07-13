@@ -7,7 +7,6 @@ from gym import spaces
 from gym_trading.config import PACKAGE_DIR
 from gym_trading.envs.stock_env_v1 import StockTradingEnvV1
 from gym_trading.envs.helper import action_to_str
-from stable_baselines.common.env_checker import check_env
 
 
 @pytest.fixture
@@ -40,6 +39,7 @@ def stock_trading_v1_make():
     (['data/daily_IBM.csv', 'data/daily_MSFT.csv', 'data/daily_QCOM.csv'], 3, [3, 3, 3]),
 ])
 def test_env_init(file_array, stock_number, action_space):
+    from stable_baselines.common.env_checker import check_env
     env = StockTradingEnvV1(df=None, file_array=file_array)
     check_env(env)
     assert env.action_space == spaces.MultiDiscrete(action_space)
@@ -192,9 +192,11 @@ def test_step_loop(stock_trading_env_two_stock):
     assert env.current_step == env.TOTAL_STEP
 
 
-def test_print(stock_trading_env_two_stock):
-    env = stock_trading_env_two_stock
-    for _ in range(100):
+def test_print(stock_trading_v1_make):
+    env = stock_trading_v1_make
+    # print(env.observation_space)
+    # env.TOTAL_STEP = 500
+    for _ in range(300):
         env.step(env.action_space.sample())
     env.render()
 

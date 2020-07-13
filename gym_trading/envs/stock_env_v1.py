@@ -1,4 +1,5 @@
 import gym
+import random
 import copy
 import numpy as np
 import matplotlib.pyplot as plt
@@ -69,7 +70,9 @@ class StockTradingEnvV1(gym.Env):
         # cost basis of each stock
         self.cost_basis_array = np.array([0] * self.stock_number)
 
-        self.start_point = 10 if self.debug else 10  # index of start point
+        # index of start point
+        self.start_point = 10 if self.debug else random.randint(6, len(self.df.index) - self.TOTAL_STEP - 1)
+
         self.current_step = 0
 
     def reset(self):
@@ -80,7 +83,7 @@ class StockTradingEnvV1(gym.Env):
         self.action_history = []
         self.hold_share_array = [0] * self.stock_number
         self.cost_basis_array = np.array([0] * self.stock_number)
-        self.start_point = 10 if self.debug else 10  # index of start point
+        self.start_point = 10 if self.debug else random.randint(6, len(self.df.index) - self.TOTAL_STEP - 1)
         self.current_step = 0
         return self._get_obs()
 
@@ -105,11 +108,14 @@ class StockTradingEnvV1(gym.Env):
         upper = self.TOTAL_STEP + 1 + padding
 
         ax_balance = plt.subplot(self.stock_number + 1, 1, 1)
-        ax_balance.set_xlim(lower, upper)
+
         plt.axvline(x=self.current_step, label='current step', c='0.75')
 
         plt.plot(self.balance_history, label='balance')
         plt.plot(self.net_worth_history, label='net worth')
+
+        ax_balance.set_xlim(lower, upper)
+
         plt.legend()
         # ax_balance.set_ylim(bottom=0)
         for i, stock_name in zip(range(self.stock_number), self.stock_name_array):
@@ -119,16 +125,24 @@ class StockTradingEnvV1(gym.Env):
                        color='0.9', label='observation frame')
             open_label = stock_name + '_' + 'open'
             close_label = stock_name + '_' + 'close'
+
             x = range(lower + padding, self.current_step + 1)
+
             index_start = self.start_point - self.observation_frame
             index_end = self.start_point + self.current_step
             data = self.df[[open_label, close_label]].loc[index_start: self.start_point + self.TOTAL_STEP].values
             top = np.max(np.max(data)) + padding
             bottom = np.min(np.min(data)) - padding
             ax.set_ylim(bottom, top)
+
+            x_tick_step = int(self.TOTAL_STEP / (len(ax_balance.get_xticklabels()) - 3))
+            plt.xticks(range(0, self.TOTAL_STEP+1, x_tick_step),
+                       self.df['date'].loc[self.start_point+0:self.start_point+self.TOTAL_STEP+1:x_tick_step])
             ax.set_xlim(lower, upper)
+
             line_open, = plt.plot(x, self.df[open_label].loc[index_start: index_end].values, label=open_label)
             line_close, = plt.plot(x, self.df[close_label].loc[index_start: index_end].values, label=close_label)
+
             plt.legend(handles=[line_open, line_close])
             if label_action:
                 for j, actions in zip(range(self.current_step), self.action_history):
