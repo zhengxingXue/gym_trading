@@ -1,4 +1,5 @@
 import gym
+import copy
 import numpy as np
 import matplotlib.pyplot as plt
 from gym import spaces
@@ -57,6 +58,10 @@ class StockTradingEnvV1(gym.Env):
         self.balance = self.INITIAL_BALANCE
         self.balance_history = [self.balance]
 
+        # keep successfully executed actions
+        # if sell or buy not valid, convert to hold action
+        self.action_history = []
+
         # whether hold share of the stock
         # [0] - No ; [1] - Yes
         self.hold_share_array = [0] * self.stock_number
@@ -72,6 +77,7 @@ class StockTradingEnvV1(gym.Env):
         self.net_worth_history = [self.net_worth]
         self.balance = self.INITIAL_BALANCE
         self.balance_history = [self.balance]
+        self.action_history = []
         self.hold_share_array = [0] * self.stock_number
         self.cost_basis_array = np.array([0] * self.stock_number)
         self.start_point = 10 if self.debug else 10  # index of start point
@@ -80,9 +86,9 @@ class StockTradingEnvV1(gym.Env):
 
     def step(self, action):
         net_worth_before_step = self.net_worth
+        self.action_history.append(copy.copy(action))
         # Execute one time step within the environment
         info = self._take_action(action)
-
         self.balance_history.append(self.balance)
         self.net_worth_history.append(self.net_worth)
 
@@ -92,7 +98,7 @@ class StockTradingEnvV1(gym.Env):
         obs = self._get_obs()
         return obs, reward, done, info
 
-    def render(self, mode='human'):
+    def render(self, mode='human', label_action=False):
         fig = plt.figure(figsize=(9, 9))
         padding = 10
         lower = - self.observation_frame - padding
@@ -106,13 +112,11 @@ class StockTradingEnvV1(gym.Env):
         plt.plot(self.net_worth_history, label='net worth')
         plt.legend()
         # ax_balance.set_ylim(bottom=0)
-
         for i, stock_name in zip(range(self.stock_number), self.stock_name_array):
             ax = plt.subplot(self.stock_number + 1, 1, i + 2)
-            plt.axvline(x=self.current_step, label='current step', c='0.6')
+            plt.axvline(x=self.current_step, label='current step', c='0.7')
             ax.axvspan(self.current_step - self.observation_frame, self.current_step,
-                       color='0.8', label='observation frame')
-
+                       color='0.9', label='observation frame')
             open_label = stock_name + '_' + 'open'
             close_label = stock_name + '_' + 'close'
             x = range(lower + padding, self.current_step + 1)
@@ -121,14 +125,29 @@ class StockTradingEnvV1(gym.Env):
             data = self.df[[open_label, close_label]].loc[index_start: self.start_point + self.TOTAL_STEP].values
             top = np.max(np.max(data)) + padding
             bottom = np.min(np.min(data)) - padding
-
             ax.set_ylim(bottom, top)
             ax.set_xlim(lower, upper)
-
             line_open, = plt.plot(x, self.df[open_label].loc[index_start: index_end].values, label=open_label)
             line_close, = plt.plot(x, self.df[close_label].loc[index_start: index_end].values, label=close_label)
             plt.legend(handles=[line_open, line_close])
+            if label_action:
+                for j, actions in zip(range(self.current_step), self.action_history):
+                    current_action = actions[i]
+                    if current_action == 0:  # buy
+                        y = self.df[open_label].loc[self.start_point+j]
+                        circle = plt.Circle((j, y+10), .7, color='r', label='buy')
+                        ax.add_artist(circle)
+                    elif current_action == 1:  # sell
+                        y = self.df[open_label].loc[self.start_point + j]
+                        circle = plt.Circle((j, y - 10), .7, color='g', label='sell')
+                        ax.add_artist(circle)
+                    else:  # hold (and other)
+                        pass
+            else:
+                pass
+
             plt.legend()
+
         if mode == 'human':
             plt.show()
         elif mode == 'rgb_array':
@@ -155,7 +174,8 @@ class StockTradingEnvV1(gym.Env):
                 if self.hold_share_array[i]:
                     # already hold STACK number of stock, no action
                     info[stock_name]['price'] = 'fail'
-                    pass
+                    # update action history to hold (as the effect is the same)
+                    self.action_history[self.current_step][i] = 2
                 else:
                     # buy STACK number of shares
                     # execute on next day's open price
@@ -188,7 +208,8 @@ class StockTradingEnvV1(gym.Env):
                 else:
                     # hold no stock, cannot sell no action
                     info[stock_name]['price'] = 'fail'
-                    pass
+                    # update action history to hold (as the effect is the same)
+                    self.action_history[self.current_step][i] = 2
             elif action == 2:  # hold
                 info[stock_name]['action'] = 'hold'
                 info[stock_name]['price'] = 'success'
