@@ -1,5 +1,4 @@
 import os
-import copy
 import pytest
 import pandas as pd
 import numpy as np
@@ -8,6 +7,7 @@ from gym import spaces
 from gym_trading.config import PACKAGE_DIR
 from gym_trading.envs.stock_env_v1 import StockTradingEnvV1
 from gym_trading.envs.helper import action_to_str
+from stable_baselines.common.env_checker import check_env
 
 
 @pytest.fixture
@@ -36,6 +36,7 @@ def stock_trading_v1():
 ])
 def test_env_init(file_array, stock_number, action_space):
     env = StockTradingEnvV1(df=None, file_array=file_array)
+    check_env(env)
     assert env.action_space == spaces.MultiDiscrete(action_space)
     assert env.stock_number == stock_number
     assert env.reset().shape == env.observation_space.shape
