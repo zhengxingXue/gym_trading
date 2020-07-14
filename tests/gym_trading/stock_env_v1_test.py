@@ -201,7 +201,7 @@ def test_print(stock_trading_v1_make):
     # env.TOTAL_STEP = 500
     for _ in range(300):
         env.step(env.action_space.sample())
-    env.render(label_action=False)
+    # env.render(label_action=False)
 
     # print(env.reset())
     # print(env.normalized_df.head())

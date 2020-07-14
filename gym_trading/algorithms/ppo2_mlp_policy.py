@@ -1,5 +1,5 @@
 from stable_baselines.common.policies import MlpPolicy
-from gym_trading.algorithms.utils.stable_baseline_helper import ppo2_train
+from gym_trading.algorithms.utils import ppo2_train
 
 
 def ppo2_mlp_policy_train(env_id='StockTrading-IBM-MSFT-v1', env_n=8, time_step=10 ** 5, verbose=1):
@@ -18,4 +18,4 @@ def ppo2_mlp_policy_train(env_id='StockTrading-IBM-MSFT-v1', env_n=8, time_step=
 
 
 if __name__ == '__main__':
-    ppo2_mlp_policy_train()
+    ppo2_mlp_policy_train(time_step=10 ** 4)
