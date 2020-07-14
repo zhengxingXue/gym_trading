@@ -86,7 +86,7 @@ def test_env_two_stock(stock_trading_env_two_stock):
 def test_start_point(stock_trading_env_two_stock):
     env = stock_trading_env_two_stock
     obs = env.reset()
-    stacked_obs_part = np.reshape(obs[:env.column_number*env.observation_frame], (-1, 10))
+    stacked_obs_part = np.reshape(obs[:env.column_number * env.observation_frame], (-1, 10))
     index_end = env.current_step + env.start_point
     index_start = env.current_step + env.start_point - env.observation_frame + 1
     ref_obs_norm = env.normalized_df.loc[index_start:index_end].values
@@ -112,7 +112,7 @@ def check_action(env, info, actions, reward):
             price = info[stock_name]['price']
             if isinstance(price, float):
                 column_name = stock_name + '_' + 'open'
-                row_number = env.current_step + env.start_point   # already stepped
+                row_number = env.current_step + env.start_point  # already stepped
                 next_day_open = env.df[column_name].loc[row_number]
                 assert price == next_day_open
                 init_balance -= price * env.STACK
@@ -193,12 +193,15 @@ def test_step_loop(stock_trading_env_two_stock):
 
 
 def test_print(stock_trading_v1_make):
-    env = stock_trading_v1_make
+    env = StockTradingEnvV1(debug=False,
+                            observation_frame=10,
+                            stack=20,
+                            file_array=['data/daily_IBM.csv', 'data/daily_MSFT.csv'])
     # print(env.observation_space)
     # env.TOTAL_STEP = 500
-    for _ in range(300):
+    for _ in range(150):
         env.step(env.action_space.sample())
-    env.render()
+    env.render(label_action=True)
 
     # print(env.reset())
     # print(env.normalized_df.head())

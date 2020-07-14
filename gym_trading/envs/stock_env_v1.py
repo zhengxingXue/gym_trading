@@ -25,15 +25,20 @@ class StockTradingEnvV1(gym.Env):
         'video.frames_per_second': 10
     }
 
-    observation_frame = 3  # number of frames feed to observation
-    STACK = 10  # number of shares to operate with
     INITIAL_BALANCE = 10000.  # initial balance
     MAX_BALANCE = INITIAL_BALANCE * 3  # used for normalization
     TOTAL_STEP = 300  # total number of timestep of the simulation
 
-    def __init__(self, df=None, file_array=None, absolute_path=False, debug=False):
+    def __init__(self, df=None, file_array=None, absolute_path=False, debug=False,
+                 observation_frame=10, stack=10):
         super(StockTradingEnvV1, self).__init__()
         self.debug = debug
+
+        # number of frames feed to observation
+        self.observation_frame = observation_frame
+
+        # number of shares to operate with
+        self.STACK = stack
 
         file_array = ['data/daily_IBM.csv'] if file_array is None else file_array
 
@@ -71,7 +76,8 @@ class StockTradingEnvV1(gym.Env):
         self.cost_basis_array = np.array([0] * self.stock_number)
 
         # index of start point
-        self.start_point = 10 if self.debug else random.randint(6, len(self.df.index) - self.TOTAL_STEP - 1)
+        self.start_point = 10 if self.debug \
+            else random.randint(self.observation_frame+1, len(self.df.index) - self.TOTAL_STEP - 1)
 
         self.current_step = 0
 
@@ -83,7 +89,8 @@ class StockTradingEnvV1(gym.Env):
         self.action_history = []
         self.hold_share_array = [0] * self.stock_number
         self.cost_basis_array = np.array([0] * self.stock_number)
-        self.start_point = 10 if self.debug else random.randint(6, len(self.df.index) - self.TOTAL_STEP - 1)
+        self.start_point = 10 if self.debug \
+            else random.randint(self.observation_frame+1, len(self.df.index) - self.TOTAL_STEP - 1)
         self.current_step = 0
         return self._get_obs()
 
@@ -122,7 +129,7 @@ class StockTradingEnvV1(gym.Env):
             ax = plt.subplot(self.stock_number + 1, 1, i + 2)
             plt.axvline(x=self.current_step, label='current step', c='0.7')
             ax.axvspan(self.current_step - self.observation_frame + 1, self.current_step,
-                       color='0.9', label='observation frame')
+                       color='0.9', label='observations')
             open_label = stock_name + '_' + 'open'
             close_label = stock_name + '_' + 'close'
 
@@ -148,12 +155,12 @@ class StockTradingEnvV1(gym.Env):
                 for j, actions in zip(range(self.current_step), self.action_history):
                     current_action = actions[i]
                     if current_action == 0:  # buy
-                        y = self.df[open_label].loc[self.start_point+j]
-                        circle = plt.Circle((j, y+10), .7, color='r', label='buy')
+                        y = self.df[close_label].loc[self.start_point+j+1]
+                        circle = plt.Circle((j, y+10), .5, color='r', label='buy')
                         ax.add_artist(circle)
                     elif current_action == 1:  # sell
-                        y = self.df[open_label].loc[self.start_point + j]
-                        circle = plt.Circle((j, y - 10), .7, color='g', label='sell')
+                        y = self.df[close_label].loc[self.start_point+j+1]
+                        circle = plt.Circle((j, y-10), .5, color='g', label='sell')
                         ax.add_artist(circle)
                     else:  # hold (and other)
                         pass
