@@ -1,10 +1,12 @@
-import pandas as pd
 import copy
 import os
-from gym_trading.config import PACKAGE_DIR
-import numpy as np
-from pathlib import Path
 from functools import reduce
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from gym_trading.config import PACKAGE_DIR
 
 action_to_str = {0: 'buy',
                  1: 'sell',

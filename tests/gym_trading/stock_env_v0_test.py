@@ -1,7 +1,9 @@
 import os
-import pytest
-import pandas as pd
+
 import gym
+import pandas as pd
+import pytest
+
 from gym_trading.config import PACKAGE_DIR
 from gym_trading.envs.stock_env_v0 import StockTradingEnvV0
 

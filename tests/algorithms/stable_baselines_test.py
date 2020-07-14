@@ -1,4 +1,3 @@
-import pytest
 from gym_trading.algorithms import ppo2_mlp_policy_train
 
 

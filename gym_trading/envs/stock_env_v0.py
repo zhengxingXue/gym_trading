@@ -1,13 +1,14 @@
 # modified from https://github.com/notadamking/Stock-Trading-Environment/blob/master/env/StockTradingEnv.py
-import copy
 import os
-import gym
 import random
+
+import gym
+import numpy as np
+import pandas as pd
 from gym import spaces
+
 from gym_trading.config import PACKAGE_DIR
 from gym_trading.envs.helper import normalize_df
-import pandas as pd
-import numpy as np
 
 # get rid of gym UserWarning: Box bound precision lowered...
 gym.logger.set_level(40)

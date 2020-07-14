@@ -1,5 +1,4 @@
 import os
-import pytest
 import pandas as pd
 from gym_trading.envs.helper import construct_df_array
 from gym_trading.config import PACKAGE_DIR

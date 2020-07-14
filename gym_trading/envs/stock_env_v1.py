@@ -1,9 +1,11 @@
-import gym
-import random
 import copy
-import numpy as np
+import random
+
+import gym
 import matplotlib.pyplot as plt
+import numpy as np
 from gym import spaces
+
 from gym_trading.envs.helper import normalize_df, construct_df_array
 
 

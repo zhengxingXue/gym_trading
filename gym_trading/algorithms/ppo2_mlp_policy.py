@@ -1,4 +1,5 @@
 from stable_baselines.common.policies import MlpPolicy
+
 from gym_trading.algorithms.utils import ppo2_train
 
 

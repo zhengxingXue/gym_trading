@@ -1,12 +1,14 @@
 import os
-import pytest
-import pandas as pd
-import numpy as np
+
 import gym
+import numpy as np
+import pandas as pd
+import pytest
 from gym import spaces
+
 from gym_trading.config import PACKAGE_DIR
-from gym_trading.envs.stock_env_v1 import StockTradingEnvV1
 from gym_trading.envs.helper import action_to_str
+from gym_trading.envs.stock_env_v1 import StockTradingEnvV1
 
 
 @pytest.fixture

@@ -1,14 +1,16 @@
-import gym
-import time
+import logging
 import os
-from gym_trading.config import PACKAGE_DIR
+import time
+
+import gym
 from stable_baselines import PPO2
-from stable_baselines.common.policies import FeedForwardPolicy
-from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.bench import Monitor
 from stable_baselines.common.callbacks import EvalCallback
-import tensorflow
-import logging
+from stable_baselines.common.policies import FeedForwardPolicy
+from stable_baselines.common.vec_env import DummyVecEnv
+
+from gym_trading.config import PACKAGE_DIR
+
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
 
