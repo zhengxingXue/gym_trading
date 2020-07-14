@@ -199,9 +199,9 @@ def test_print(stock_trading_v1_make):
                             file_array=['data/daily_IBM.csv', 'data/daily_MSFT.csv'])
     # print(env.observation_space)
     # env.TOTAL_STEP = 500
-    for _ in range(150):
+    for _ in range(300):
         env.step(env.action_space.sample())
-    env.render(label_action=True)
+    env.render(label_action=False)
 
     # print(env.reset())
     # print(env.normalized_df.head())
