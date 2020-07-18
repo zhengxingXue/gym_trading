@@ -32,12 +32,16 @@ class StockTradingEnvV1(gym.Env):
     TOTAL_STEP = 300  # total number of timestep of the simulation
 
     def __init__(self, df=None, file_array=None, absolute_path=False, debug=False,
-                 observation_frame=10, stack=10):
+                 observation_frame=10, stack=10, observe_future_frame=0):
         super(StockTradingEnvV1, self).__init__()
         self.debug = debug
 
         # number of frames feed to observation
         self.observation_frame = observation_frame
+
+        # number of future frames feed to observation
+        # used for experiments to see if the RL agents know (or can predict) the future, can they imporve
+        self.observe_future_frame = observe_future_frame
 
         # number of shares to operate with
         self.STACK = stack
@@ -58,7 +62,8 @@ class StockTradingEnvV1(gym.Env):
         self.observation_space = \
             spaces.Box(low=0,
                        high=1,
-                       shape=(self.column_number * self.observation_frame + self.stock_number * 2 + 2,),
+                       shape=(self.column_number * (self.observation_frame + self.observe_future_frame)
+                              + self.stock_number * 2 + 2,),
                        dtype=np.float32)
 
         self.net_worth = self.INITIAL_BALANCE
@@ -79,7 +84,8 @@ class StockTradingEnvV1(gym.Env):
 
         # index of start point
         self.start_point = 10 if self.debug \
-            else random.randint(self.observation_frame+1, len(self.df.index) - self.TOTAL_STEP - 1)
+            else random.randint(self.observation_frame+1,
+                                len(self.df.index)-self.TOTAL_STEP-self.observe_future_frame-1)
 
         self.current_step = 0
 
@@ -92,7 +98,8 @@ class StockTradingEnvV1(gym.Env):
         self.hold_share_array = [0] * self.stock_number
         self.cost_basis_array = np.array([0] * self.stock_number)
         self.start_point = 10 if self.debug \
-            else random.randint(self.observation_frame+1, len(self.df.index) - self.TOTAL_STEP - 1)
+            else random.randint(self.observation_frame+1,
+                                len(self.df.index)-self.TOTAL_STEP-self.observe_future_frame-1)
         self.current_step = 0
         return self._get_obs()
 
@@ -111,10 +118,11 @@ class StockTradingEnvV1(gym.Env):
         return obs, reward, done, info
 
     def render(self, mode='human', label_action=False):
-        fig = plt.figure(figsize=(9, 9))
+        height = 3 * (self.stock_number + 1)
+        fig = plt.figure(figsize=(9, height))
         padding = 10
         lower = - self.observation_frame - padding
-        upper = self.TOTAL_STEP + 1 + padding
+        upper = self.TOTAL_STEP + 1 + padding + self.observe_future_frame
 
         ax_balance = plt.subplot(self.stock_number + 1, 1, 1)
 
@@ -130,15 +138,15 @@ class StockTradingEnvV1(gym.Env):
         for i, stock_name in zip(range(self.stock_number), self.stock_name_array):
             ax = plt.subplot(self.stock_number + 1, 1, i + 2)
             plt.axvline(x=self.current_step, label='current step', c='0.7')
-            ax.axvspan(self.current_step - self.observation_frame + 1, self.current_step,
+            ax.axvspan(self.current_step - self.observation_frame + 1, self.current_step + self.observe_future_frame,
                        color='0.9', label='observations')
             open_label = stock_name + '_' + 'open'
             close_label = stock_name + '_' + 'close'
 
-            x = range(lower + padding, self.current_step + 1)
+            x = range(lower + padding, self.current_step + 1 + self.observe_future_frame)
 
             index_start = self.start_point - self.observation_frame
-            index_end = self.start_point + self.current_step
+            index_end = self.start_point + self.current_step + self.observe_future_frame
             data = self.df[[open_label, close_label]].loc[index_start: self.start_point + self.TOTAL_STEP].values
             top = np.max(np.max(data)) + padding
             bottom = np.min(np.min(data)) - padding
@@ -247,6 +255,10 @@ class StockTradingEnvV1(gym.Env):
         return info
 
     def _update_net_worth(self):
+        # TODO: Net worth is calculated by the close price of today,
+        #  balance is calculated by the open price of next day,
+        #  this might cause problem for RL
+
         # net worth is based on the close price of current timestep
         stock_close_value_array = np.zeros(self.stock_number)
 
@@ -261,7 +273,7 @@ class StockTradingEnvV1(gym.Env):
     def _get_obs(self):
         obs = np.array([])
         index_start = self.current_step + self.start_point - self.observation_frame + 1
-        index_end = self.current_step + self.start_point
+        index_end = self.current_step + self.start_point + self.observe_future_frame
         obs = np.append(obs, self.normalized_df.loc[index_start:index_end].values.flatten())  # as date pop
         obs = np.append(obs, self.hold_share_array)
         obs = np.append(obs, self.cost_basis_array / self.max_share_value_array)

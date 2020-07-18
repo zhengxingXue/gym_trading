@@ -194,6 +194,22 @@ def test_step_loop(stock_trading_env_two_stock):
     assert env.current_step == env.TOTAL_STEP
 
 
+def test_observe_future_frame():
+    env = StockTradingEnvV1(debug=True,
+                            observation_frame=10,
+                            observe_future_frame=10,
+                            file_array=['data/daily_IBM.csv', 'data/daily_MSFT.csv'])
+    assert env.observe_future_frame == 10
+    env.reset()
+    done = False
+    while not done:
+        actions = env.action_space.sample()
+        obs, reward, done, info = env.step(actions)
+        check_action(env, info, actions, reward)
+    assert env.current_step == env.TOTAL_STEP
+    # env.render()
+
+
 def test_print(stock_trading_v1_make):
     env = StockTradingEnvV1(debug=False,
                             observation_frame=10,
