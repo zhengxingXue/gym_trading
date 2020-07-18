@@ -14,9 +14,9 @@ def ppo2_mlp_policy_train(env_id='StockTrading-IBM-MSFT-v1', env_n=8, time_step=
     policy = MlpPolicy
     policy_name = 'mlp_policy'
     model, save_dir = ppo2_train(policy, policy_name, env_id=env_id, env_n=env_n, time_step=time_step,
-                                 enable_call_back=False, verbose=verbose)
+                                 enable_call_back=True, verbose=verbose)
     return model, save_dir
 
 
 if __name__ == '__main__':
-    ppo2_mlp_policy_train(time_step=10 ** 4)
+    ppo2_mlp_policy_train(time_step=10 ** 5)
