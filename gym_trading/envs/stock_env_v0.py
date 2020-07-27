@@ -19,8 +19,11 @@ class StockTradingEnvV0(gym.Env):
     Stock trading environment.
 
     **STATE:**
+    Prices contains the OHCL values for the last five prices
 
     **ACTIONS:**
+    Actions of the format Buy x%, Sell x%, Hold, etc.
+
     """
 
     metadata = {'render.modes': ['human']}
