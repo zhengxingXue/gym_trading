@@ -27,12 +27,12 @@ def stock_trading_env_two_stock():
 
 @pytest.fixture
 def stock_trading_v1():
-    return gym.make('StockTrading-v1')
+    return gym.make('StockTrading-norm-v1')
 
 
 @pytest.fixture
 def stock_trading_v1_make():
-    return gym.make('StockTrading-IBM-MSFT-v1')
+    return gym.make('StockTrading-IBM-MSFT-norm-v1')
 
 
 @pytest.mark.parametrize("file_array, stock_number, action_space", [
@@ -47,7 +47,7 @@ def test_env_init(file_array, stock_number, action_space):
     assert env.action_space == spaces.MultiDiscrete(action_space)
     assert env.stock_number == stock_number
     assert env.reset().shape == env.observation_space.shape
-    assert env.column_number == 5 * stock_number
+    assert env.obs_column_number == 1 * stock_number
 
 
 def test_env_make(stock_trading_env_one_stock, stock_trading_v1, stock_trading_v1_make, stock_trading_env_two_stock):
@@ -88,10 +88,10 @@ def test_env_two_stock(stock_trading_env_two_stock):
 def test_start_point(stock_trading_env_two_stock):
     env = stock_trading_env_two_stock
     obs = env.reset()
-    stacked_obs_part = np.reshape(obs[:env.column_number * env.observation_frame], (-1, 10))
+    stacked_obs_part = np.reshape(obs[:env.obs_column_number * env.observation_frame], (-1, 2))
     index_end = env.current_step + env.start_point
     index_start = env.current_step + env.start_point - env.observation_frame + 1
-    ref_obs_norm = env.normalized_df.loc[index_start:index_end].values
+    ref_obs_norm = env.normalized_df[env.observation_column_name_array].loc[index_start:index_end].values
     assert ((ref_obs_norm == stacked_obs_part).all()).all()
 
     assert env.df['date'].loc[env.start_point] == '2000-01-18'
@@ -108,27 +108,27 @@ def check_action(env, info, actions, reward):
         share_value_column = stock_name + '_' + 'close'
         share_value_row = env.current_step + env.start_point - 1
         share_value = env.df[share_value_column].loc[share_value_row]
-        stock_close_value_array[i] = share_value * env.STACK
+        stock_close_value_array[i] = share_value * env.stack
 
         if action_to_str[action] == 'buy':
             price = info[stock_name]['price']
             if isinstance(price, float):
-                column_name = stock_name + '_' + 'open'
-                row_number = env.current_step + env.start_point  # already stepped
+                column_name = stock_name + '_' + 'close'
+                row_number = env.current_step + env.start_point - 1
                 next_day_open = env.df[column_name].loc[row_number]
                 assert price == next_day_open
-                init_balance -= price * env.STACK
+                init_balance -= price * env.stack
             else:
                 # buy action failed as already hold shares
                 assert env.hold_share_array[i] == 1
         elif action_to_str[action] == 'sell':
             price = info[stock_name]['price']
             if isinstance(price, float):
-                column_name = stock_name + '_' + 'open'
-                row_number = env.current_step + env.start_point  # already stepped
+                column_name = stock_name + '_' + 'close'
+                row_number = env.current_step + env.start_point - 1  # already stepped
                 next_day_open = env.df[column_name].loc[row_number]
                 assert price == next_day_open
-                init_balance += price * env.STACK
+                init_balance += price * env.stack
             else:
                 # sell action failed as no share hold
                 assert env.hold_share_array[i] == 0
@@ -191,7 +191,7 @@ def test_step_loop(stock_trading_env_two_stock):
         actions = env.action_space.sample()
         obs, reward, done, info = env.step(actions)
         check_action(env, info, actions, reward)
-    assert env.current_step == env.TOTAL_STEP
+    assert env.current_step == env.total_time_step
 
 
 def test_observe_future_frame():
@@ -206,21 +206,42 @@ def test_observe_future_frame():
         actions = env.action_space.sample()
         obs, reward, done, info = env.step(actions)
         check_action(env, info, actions, reward)
-    assert env.current_step == env.TOTAL_STEP
+    assert env.current_step == env.total_time_step
     # env.render()
+
+
+def test_normalize_false():
+    from stable_baselines.common.env_checker import check_env
+    env = StockTradingEnvV1(debug=True, normalize_observation=False)
+    check_env(env)
+
+    assert env.observation_space.shape == (14, )
+    obs = env.reset()
+    stacked_obs_part = np.reshape(obs[:env.obs_column_number * env.observation_frame], (-1, env.stock_number))
+    index_end = env.current_step + env.start_point
+    index_start = env.current_step + env.start_point - env.observation_frame + 1
+    ref_obs = env.df[env.observation_column_name_array].loc[index_start:index_end].values
+    assert ((ref_obs == stacked_obs_part).all()).all()
 
 
 def test_print(stock_trading_v1_make):
     env = StockTradingEnvV1(debug=False,
-                            observation_frame=10,
+                            observation_frame=5,
+                            observe_future_frame=5,
                             stack=20,
-                            file_array=['data/daily_IBM.csv', 'data/daily_MSFT.csv'])
+                            file_array=['data/daily_MSFT.csv', 'data/daily_IBM.csv', ],
+                            observation_column=['close'],
+                            normalize_observation=False,
+                            )
+
+    # env = stock_trading_v1_make
     # print(env.observation_space)
-    # env.TOTAL_STEP = 500
+    # env.total_time_step = 500
     for _ in range(300):
         env.step(env.action_space.sample())
-    # env.render(label_action=False)
+    # env.render(label_action=True)
 
-    # print(env.reset())
-    # print(env.normalized_df.head())
+    # print('')
+    # print(np.reshape(env.reset(), (-1, env.stock_number)))
+    # print(env.df[env.observation_column_name_array].loc[env.start_point-4:env.start_point+5])
     # print(env.observation_space.shape)
