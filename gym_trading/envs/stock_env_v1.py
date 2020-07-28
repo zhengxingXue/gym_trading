@@ -123,7 +123,7 @@ class StockTradingEnvV1(gym.Env):
         self.hold_share_array = np.array([0] * self.stock_number)
 
         # cost basis of each stock
-        self.cost_basis_array = np.array([0] * self.stock_number)
+        self.cost_basis_array = np.array([0.] * self.stock_number)
 
         # index of start point
         self.start_point = 10 if self.debug \
@@ -139,7 +139,7 @@ class StockTradingEnvV1(gym.Env):
         self.balance_history = []
         self.action_history = []
         self.hold_share_array = np.array([0] * self.stock_number)
-        self.cost_basis_array = np.array([0] * self.stock_number)
+        self.cost_basis_array = np.array([0.] * self.stock_number)
         self.start_point = 10 if self.debug \
             else random.randint(self.observation_frame + 1,
                                 len(self.df.index) - self.total_time_step - self.observe_future_frame - 1)

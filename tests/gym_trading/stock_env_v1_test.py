@@ -240,9 +240,17 @@ def test_print(stock_trading_v1_make):
     # env.render(label_action=True)
     for _ in range(300):
         env.step(env.action_space.sample())
-    # env.render(label_action=True)
+    env.render(label_action=True)
 
-    # print('')
+    print('')
     # print(np.reshape(env.reset(), (-1, env.stock_number)))
     # print(env.df[env.observation_column_name_array].loc[env.start_point-4:env.start_point+5])
     # print(env.observation_space.shape)
+
+    # obs = env.reset()
+    # print(np.reshape(obs, (-1, env.stock_number)))
+    #
+    # action = [0]
+    # obs, reward, done, info = env.step(action)
+    # print(np.reshape(obs, (-1, env.stock_number)))
+
