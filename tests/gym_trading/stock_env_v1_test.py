@@ -237,6 +237,7 @@ def test_print(stock_trading_v1_make):
     # env = stock_trading_v1_make
     # print(env.observation_space)
     # env.total_time_step = 500
+    # env.render(label_action=True)
     for _ in range(300):
         env.step(env.action_space.sample())
     # env.render(label_action=True)

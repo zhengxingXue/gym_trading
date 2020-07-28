@@ -110,9 +110,9 @@ class StockTradingEnvV1(gym.Env):
                            dtype=np.float32)
 
         self.net_worth = self.initial_balance
-        self.net_worth_history = []
+        self.net_worth_history = [self.net_worth]
         self.balance = self.initial_balance
-        self.balance_history = []
+        self.balance_history = [self.balance]
 
         # keep successfully executed actions
         # if sell or buy not valid, convert to hold action
@@ -328,6 +328,7 @@ class StockTradingEnvV1(gym.Env):
         index_end = self.current_step + self.start_point + self.observe_future_frame
         # list append is more efficient than numpy append
         # https://www.quora.com/Is-it-better-to-use-np-append-or-list-append
+        # little difference in here (from experiment)
         if self.normalize_observation:
             if self.get_obs_numpy_append:
                 obs = np.array([])
