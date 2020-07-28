@@ -81,7 +81,7 @@ class StockTradingEnvV1(gym.Env):
         self.action_space = spaces.MultiDiscrete([3] * self.stock_number)
 
         obs_len = self.obs_column_number * \
-                  (self.observation_frame + self.observe_future_frame) + self.stock_number * 2 + 2
+                    (self.observation_frame + self.observe_future_frame) + self.stock_number * 2 + 2
 
         if self.normalize_observation:
             self.observation_space = \
@@ -119,7 +119,7 @@ class StockTradingEnvV1(gym.Env):
 
         # whether hold share of the stock
         # [0] - No ; [1] - Yes
-        self.hold_share_array = [0] * self.stock_number
+        self.hold_share_array = np.array([0] * self.stock_number)
 
         # cost basis of each stock
         self.cost_basis_array = np.array([0] * self.stock_number)
@@ -137,7 +137,7 @@ class StockTradingEnvV1(gym.Env):
         self.balance = self.initial_balance
         self.balance_history = []
         self.action_history = []
-        self.hold_share_array = [0] * self.stock_number
+        self.hold_share_array = np.array([0] * self.stock_number)
         self.cost_basis_array = np.array([0] * self.stock_number)
         self.start_point = 10 if self.debug \
             else random.randint(self.observation_frame + 1,
@@ -325,17 +325,31 @@ class StockTradingEnvV1(gym.Env):
     def _get_obs(self):
         index_start = self.current_step + self.start_point - self.observation_frame + 1
         index_end = self.current_step + self.start_point + self.observe_future_frame
-        obs = np.array([])
+        # obs = np.array([])
+        obs = []
         if self.normalize_observation:
-            obs = np.append(obs, self.normalized_df[
-                                 self.observation_column_name_array].loc[index_start:index_end].values.flatten())
-            obs = np.append(obs, self.hold_share_array)
-            obs = np.append(obs, self.cost_basis_array / self.max_share_value_array)
-            obs = np.append(obs, np.array([self.balance, self.net_worth]) / self.max_balance)
+            # list append is more efficient than numpy append
+            # https://www.quora.com/Is-it-better-to-use-np-append-or-list-append
+            obs += self.normalized_df[self.observation_column_name_array].loc[
+                   index_start:index_end].values.flatten().tolist()
+            obs += self.hold_share_array.tolist()
+            obs += (self.cost_basis_array / self.max_share_value_array).tolist()
+            obs += [self.balance/self.max_balance, self.net_worth/self.max_balance]
+            obs = np.array(obs)
+            # obs = np.append(obs, self.normalized_df[
+            #                      self.observation_column_name_array].loc[index_start:index_end].values.flatten())
+            # obs = np.append(obs, self.hold_share_array)
+            # obs = np.append(obs, self.cost_basis_array / self.max_share_value_array)
+            # obs = np.append(obs, np.array([self.balance, self.net_worth]) / self.max_balance)
         else:
-            obs = np.append(obs, self.df[
-                                     self.observation_column_name_array].loc[index_start:index_end].values.flatten())
-            obs = np.append(obs, self.hold_share_array)
-            obs = np.append(obs, self.cost_basis_array)
-            obs = np.append(obs, [self.balance, self.net_worth])
+            obs += self.df[self.observation_column_name_array].loc[index_start:index_end].values.flatten().tolist()
+            obs += self.hold_share_array.tolist()
+            obs += self.cost_basis_array.tolist()
+            obs += [self.balance, self.net_worth]
+            obs = np.array(obs)
+            # obs = np.append(obs, self.df[
+            #                         self.observation_column_name_array].loc[index_start:index_end].values.flatten())
+            # obs = np.append(obs, self.hold_share_array)
+            # obs = np.append(obs, self.cost_basis_array)
+            # obs = np.append(obs, [self.balance, self.net_worth])
         return obs
