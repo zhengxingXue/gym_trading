@@ -49,6 +49,7 @@ class StockTradingEnvV1(gym.Env):
             'sell_buy_column': 'close',  # column name for sell and buy action's share value
             'net_worth_column': 'close',  # column name for net worth calculation
             'normalize_observation': True,  # whether to normalize the observation
+            'get_obs_numpy_append': True,  # whether to use numpy append append for get obs
         }
 
         attribute_dict.update((k, kwargs[k]) for k in attribute_dict.keys() & kwargs.keys())
@@ -325,31 +326,38 @@ class StockTradingEnvV1(gym.Env):
     def _get_obs(self):
         index_start = self.current_step + self.start_point - self.observation_frame + 1
         index_end = self.current_step + self.start_point + self.observe_future_frame
-        # obs = np.array([])
-        obs = []
+        # list append is more efficient than numpy append
+        # https://www.quora.com/Is-it-better-to-use-np-append-or-list-append
         if self.normalize_observation:
-            # list append is more efficient than numpy append
-            # https://www.quora.com/Is-it-better-to-use-np-append-or-list-append
-            obs += self.normalized_df[self.observation_column_name_array].loc[
-                   index_start:index_end].values.flatten().tolist()
-            obs += self.hold_share_array.tolist()
-            obs += (self.cost_basis_array / self.max_share_value_array).tolist()
-            obs += [self.balance/self.max_balance, self.net_worth/self.max_balance]
-            obs = np.array(obs)
-            # obs = np.append(obs, self.normalized_df[
-            #                      self.observation_column_name_array].loc[index_start:index_end].values.flatten())
-            # obs = np.append(obs, self.hold_share_array)
-            # obs = np.append(obs, self.cost_basis_array / self.max_share_value_array)
-            # obs = np.append(obs, np.array([self.balance, self.net_worth]) / self.max_balance)
+            if self.get_obs_numpy_append:
+                obs = np.array([])
+                obs = np.append(obs, self.normalized_df[
+                                         self.observation_column_name_array].loc[
+                                     index_start:index_end].values.flatten())
+                obs = np.append(obs, self.hold_share_array)
+                obs = np.append(obs, self.cost_basis_array / self.max_share_value_array)
+                obs = np.append(obs, np.array([self.balance, self.net_worth]) / self.max_balance)
+            else:
+                obs = []
+                obs += self.normalized_df[self.observation_column_name_array].loc[
+                       index_start:index_end].values.flatten().tolist()
+                obs += self.hold_share_array.tolist()
+                obs += (self.cost_basis_array / self.max_share_value_array).tolist()
+                obs += [self.balance/self.max_balance, self.net_worth/self.max_balance]
+                obs = np.array(obs)
         else:
-            obs += self.df[self.observation_column_name_array].loc[index_start:index_end].values.flatten().tolist()
-            obs += self.hold_share_array.tolist()
-            obs += self.cost_basis_array.tolist()
-            obs += [self.balance, self.net_worth]
-            obs = np.array(obs)
-            # obs = np.append(obs, self.df[
-            #                         self.observation_column_name_array].loc[index_start:index_end].values.flatten())
-            # obs = np.append(obs, self.hold_share_array)
-            # obs = np.append(obs, self.cost_basis_array)
-            # obs = np.append(obs, [self.balance, self.net_worth])
+            if self.get_obs_numpy_append:
+                obs = np.array([])
+                obs = np.append(obs, self.df[
+                                        self.observation_column_name_array].loc[index_start:index_end].values.flatten())
+                obs = np.append(obs, self.hold_share_array)
+                obs = np.append(obs, self.cost_basis_array)
+                obs = np.append(obs, [self.balance, self.net_worth])
+            else:
+                obs = []
+                obs += self.df[self.observation_column_name_array].loc[index_start:index_end].values.flatten().tolist()
+                obs += self.hold_share_array.tolist()
+                obs += self.cost_basis_array.tolist()
+                obs += [self.balance, self.net_worth]
+                obs = np.array(obs)
         return obs
