@@ -156,7 +156,7 @@ class StockTradingEnvV1(gym.Env):
 
         self.current_step += 1
         reward = self.net_worth - net_worth_before_step
-        done = self.net_worth <= 0 or self.current_step >= self.total_time_step
+        done = self.balance <= 0 or self.current_step >= self.total_time_step
         obs = self._get_obs()
         return obs, reward, done, info
 
