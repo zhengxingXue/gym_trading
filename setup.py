@@ -7,6 +7,6 @@ setup(name='gym_trading',
                         'pytest',
                         'matplotlib',
                         'stable-baselines[mpi]==2.10.0',
-                        'tensorflow==1.15.2',
+                        'tensorflow==2.5.0',
                         'pandas']
 )
